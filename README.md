@@ -12,19 +12,23 @@ A lightweight, local, line-delimited JSON over TCP server that exposes a set of 
 
 ```mermaid
 flowchart LR
-  subgraph Client Host
+  subgraph Client_Host
     CLI[client.py CLI]
   end
-  subgraph Server Host (Localhost)
+
+  subgraph Server_Host_Localhost
     S[asyncio TCP Server]
     R[Command Router]
     E[ml_engine.py]
     FS[(Filesystem)]
   end
 
-  CLI -->|JSON line over TCP| S --> R --> E
+  CLI -->|JSON line over TCP| S
+  S --> R
+  R --> E
   E <-->|read/write models & metadata| FS
-  R -->|JSON response| S -->|JSON line over TCP| CLI
+  R -->|JSON response| S
+  S -->|JSON line over TCP| CLI
 ```
 
 - `client.py` opens a TCP connection, sends a single JSON message terminated by `\n`, then reads a single line response.
@@ -55,14 +59,14 @@ sequenceDiagram
   participant F as Filesystem
 
   C->>S: connect()
-  C->>S: {id, command, params}\n
-  S->>R: parse + validate
-  R->>M: fn = COMMANDS[command]; fn(**params)
-  M->>F: load dataset / model
+  C->>S: {id, command, params}
+  S->>R: parse and validate
+  R->>M: call COMMANDS[command] with params
+  M->>F: load dataset or model
   M->>M: train/evaluate/predict/explain
-  M->>F: persist model + metadata
-  M-->>R: result
-  R-->>S: {id, status:"ok", result}
+  M->>F: persist model and metadata
+  M-->>R: return result
+  R-->>S: {id, status: "ok", result}
   S-->>C: JSON line response
   C-->>S: close
 ```
@@ -111,18 +115,18 @@ Error response (example):
 
 ```mermaid
 flowchart TD
-  A[CLI args -> command + -p key=val] --> B[client.py parse\nassemble params]
-  B --> C[open TCP 127.0.0.1:5000]\n
+  A[CLI args -> command + -p key=val] --> B[client.py parse assemble params]
+  B --> C[open TCP 127.0.0.1:5000]
   C --> D[send JSON line]
-  D --> E[server.py readline]\n
-  E --> F[json.loads]\n
+  D --> E[server.py readline]
+  E --> F[json.loads]
   F --> G[lookup COMMANDS[command]]
-  G --> H[call fn(**params)]
+  G --> H[call fn with params]
   H --> I[ml_engine: load dataset/model]
   I --> J[train/eval/predict/explain]
-  J --> K[persist joblib + meta.json]
+  J --> K[persist joblib and meta.json]
   K --> L[build response {id,status,result}]
-  L --> M[write JSON line]\n
+  L --> M[write JSON line]
   M --> N[CLI prints response]
 ```
 
