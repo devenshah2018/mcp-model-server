@@ -120,7 +120,7 @@ flowchart TD
   C --> D[send JSON line]
   D --> E[server.py readline]
   E --> F[json.loads]
-  F --> G[lookup COMMANDS(command)]
+  F --> G["lookup COMMANDS(command)"]
   G --> H[call fn with params]
   H --> I[ml_engine: load dataset/model]
   I --> J[train/eval/predict/explain]
