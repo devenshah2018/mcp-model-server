@@ -125,7 +125,7 @@ flowchart TD
   H --> I[ml_engine: load dataset/model]
   I --> J[train/eval/predict/explain]
   J --> K[persist joblib and meta.json]
-  K --> L[build response {id,status,result}]
+  K --> L["build response {id,status,result}"]
   L --> M[write JSON line]
   M --> N[CLI prints response]
 ```
