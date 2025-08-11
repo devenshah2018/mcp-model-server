@@ -1,4 +1,3 @@
-# ml_engine.py
 import os
 import json
 import uuid
@@ -58,19 +57,14 @@ def train_model(dataset: str, algorithm: str = "logistic_regression", target_col
     X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=test_size, random_state=random_state, stratify=y)
     ModelClass = ALGO_MAP[algorithm]
     hyperparams = hyperparams or {}
-    # provide default solver for small datasets if using LogisticRegression
     if algorithm == "logistic_regression":
         hyperparams.setdefault("max_iter", 300)
         hyperparams.setdefault("solver", "lbfgs")
         hyperparams.setdefault("multi_class", "auto")
     model = ModelClass(**hyperparams)
     model.fit(X_train, y_train)
-
-    # generate metrics
     y_pred = model.predict(X_test)
     metrics = _calc_metrics(y_test, y_pred)
-
-    # save
     model_id = f"{algorithm}_{uuid.uuid4().hex[:8]}"
     joblib.dump(model, _model_path(model_id))
     meta = {
@@ -86,7 +80,6 @@ def train_model(dataset: str, algorithm: str = "logistic_regression", target_col
     return meta
 
 def _calc_metrics(y_true, y_pred):
-    # handle multiclass for precision/recall with average='macro'
     return {
         "accuracy": float(accuracy_score(y_true, y_pred)),
         "precision_macro": float(precision_score(y_true, y_pred, average="macro", zero_division=0)),
@@ -126,20 +119,12 @@ def predict(model_id: str, input_list: List[List[float]]):
     model, meta = load_model(model_id)
     arr = np.array(input_list)
     pred = model.predict(arr).tolist()
-    # if classifier has predict_proba
     proba = None
     if hasattr(model, "predict_proba"):
         proba = model.predict_proba(arr).tolist()
     return {"predictions": pred, "probabilities": proba}
 
 def explain_prediction(model_id: str, input_row: List[float], dataset_for_baseline: Optional[str] = None, target_col: Optional[str] = None, n_repeats: int = 5):
-    """
-    Explanation using:
-      - feature_importances_ (trees),
-      - coef_ (linear),
-      - fallback: permutation importance on a small sample
-    Returns feature importance array of same length as features.
-    """
     model, meta = load_model(model_id)
     dataset = dataset_for_baseline or meta.get("dataset")
     target_col = target_col or meta.get("target_col", "target")
@@ -148,20 +133,14 @@ def explain_prediction(model_id: str, input_row: List[float], dataset_for_baseli
     df = load_dataset_csv(dataset)
     X = df.drop(columns=[target_col]).values
     feature_names = list(df.drop(columns=[target_col]).columns)
-
-    # Linear models
     if hasattr(model, "coef_"):
         coefs = np.mean(np.abs(model.coef_), axis=0).tolist()
         paired = list(zip(feature_names, coefs))
         return {"feature_names": feature_names, "importances": coefs, "method": "coef", "paired": paired}
-
-    # Tree-based models
     if hasattr(model, "feature_importances_"):
         fi = model.feature_importances_.tolist()
         paired = list(zip(feature_names, fi))
         return {"feature_names": feature_names, "importances": fi, "method": "feature_importances", "paired": paired}
-
-    # Fallback: permutation importance
     try:
         r = permutation_importance(model, X, df[target_col].values, n_repeats=n_repeats, random_state=0)
         importances = r.importances_mean.tolist()
@@ -179,7 +158,6 @@ def list_models():
     return metas
 
 def export_model(model_id: str, export_format: str = "joblib"):
-    # currently only joblib supported (just copy file)
     if export_format != "joblib":
         raise ValueError("only joblib export supported")
     src = _model_path(model_id)

@@ -1,4 +1,3 @@
-# server.py
 import asyncio
 import json
 import traceback
@@ -35,23 +34,17 @@ async def handle_client(reader: asyncio.StreamReader, writer: asyncio.StreamWrit
                 writer.write((json.dumps(resp) + "\n").encode("utf-8"))
                 await writer.drain()
                 continue
-
             mid = message.get("id")
             cmd = message.get("command")
             params = message.get("params", {})
-
             print(f"Received command: {cmd} id={mid} params={params}")
-
             if cmd not in COMMANDS:
                 resp = {"id": mid, "status": "error", "result": f"unknown command {cmd}"}
                 writer.write((json.dumps(resp) + "\n").encode("utf-8"))
                 await writer.drain()
                 continue
-
             try:
-                # Call target function
                 fn = COMMANDS[cmd]
-                # allow both dict params or named arguments
                 if isinstance(params, dict):
                     result = fn(**params)
                 else:
