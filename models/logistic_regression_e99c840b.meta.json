@@ -1,0 +1,17 @@
+{
+  "model_id": "logistic_regression_e99c840b",
+  "algorithm": "logistic_regression",
+  "dataset": "iris.csv",
+  "target_col": "target",
+  "hyperparams": {
+    "max_iter": 300,
+    "solver": "lbfgs",
+    "multi_class": "auto"
+  },
+  "metrics": {
+    "accuracy": 0.9733333333333334,
+    "precision_macro": 0.9738247863247862,
+    "recall_macro": 0.9733333333333333,
+    "f1_macro": 0.9733226623982927
+  }
+}
