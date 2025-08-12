@@ -166,30 +166,6 @@ Note: The CLI supports multiple `-p` occurrences or multiple key=val pairs after
 - Persistence: models saved with `joblib`, metadata in co-located `*.meta.json` with metrics and provenance. Datasets are plain CSV loaded via pandas.
 - ML defaults: `logistic_regression` supplies safe defaults (`max_iter=300`, `solver=lbfgs`, `multi_class=auto`). Metrics are macro-averaged for multiclass.
 
-## Extending the server
-
-1) Implement a function in `ml_engine.py` (pure-python, raise exceptions on invalid inputs).
-2) Add it to the `COMMANDS` map in `server.py` with a unique `command` string.
-3) Update client-side invocation (e.g., script, CLI, or other callers) to send `{command, params}`.
-4) Keep results JSON-serializable. For large payloads, consider returning file paths.
-
-Optional improvements:
-- Offload CPU-bound work to a thread/process pool via `asyncio.to_thread` or `concurrent.futures`.
-- Add streaming or chunked responses for long operations or large artifacts.
-- Add authentication and TLS if exposing beyond localhost.
-
-## Security considerations
-
-- Designed for local use only: binds to 127.0.0.1 by default.
-- No authentication/authorization; do not expose to untrusted networks.
-- Input validation is minimal; commands operate directly on local filesystem and CSVs under the project tree.
-
-## Performance notes
-
-- Training and permutation importance are CPU-bound; prefer small test sizes and sensible hyperparameters for demos.
-- Use `uvloop` for lower latency IO on supported platforms.
-- Batch predictions with `predict(model_id, input_list=[[...], ...])` to amortize overhead.
-
 ## Troubleshooting
 
 - Missing params: ensure the CLI passes `-p key=value` pairs; multiple pairs can follow one `-p`.
